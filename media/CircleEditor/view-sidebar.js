@@ -1,8 +1,5 @@
 var sidebar = sidebar || {};
 var base = base || require('./external/base');
-var typeName = typeName || {};
-var tensorType = tensorType || {};
-var customType = customType || {};
 
 sidebar.Sidebar = class {
 
@@ -1441,15 +1438,8 @@ sidebar.ArgumentView = class {
         let shape = this._shape.value;
         shape = '{ "data": [' + shape + '] }';
         shape = JSON.parse(shape).data;
-        
-        const originalString = this._argument._initializer.toString();
-        const currentString = this._data.value;
 
-        if (originalString === currentString) {
-            this._editObject._arguments._isChanged = false;
-        } else {
-            this._editObject._arguments._isChanged = true;
-        }
+        this._editObject._arguments._isChanged = true;
 
         if (this._argument._initializer && this._editObject._arguments._isChanged) {
             let data;
@@ -1509,7 +1499,7 @@ sidebar.ArgumentView = class {
         this.show(initializer);
     }
 
-    check(){
+    check() {
         for (const ch of this._shape.value) {
             if (ch !== ',' && (ch > '9' || ch < '0')) {
                 return false;
