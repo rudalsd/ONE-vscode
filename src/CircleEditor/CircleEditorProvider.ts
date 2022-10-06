@@ -29,28 +29,31 @@ import {CircleEditorDocument} from './CircleEditorDocument';
  */
 export enum MessageDefs {
   // message command
-  alert = 'alert',
-  request = 'request',
-  response = 'response',
-  pageloaded = 'pageloaded',
-  loadmodel = 'loadmodel',
-  finishload = 'finishload',
-  reload = 'reload',
-  selection = 'selection',
-  backendColor = 'backendColor',
-  error = 'error',
-  colorTheme = 'colorTheme',
+  alert = "alert",
+  request = "request",
+  response = "response",
+  pageloaded = "pageloaded",
+  loadmodel = "loadmodel",
+  finishload = "finishload",
+  reload = "reload",
+  selection = "selection",
+  backendColor = "backendColor",
+  error = "error",
+  colorTheme = "colorTheme",
   // loadmodel type
-  modelpath = 'modelpath',
-  uint8array = 'uint8array',
+  modelpath = "modelpath",
+  uint8array = "uint8array",
   // selection
-  names = 'names',
-  tensors = 'tensors',
+  names = "names",
+  tensors = "tensors",
   // partiton of backends
-  partition = 'partition',
+  partition = "partition",
   // commands for custom editor features
-  edit = 'edit'
-  // TODO: define messageDefs for additional features to be implemented
+  edit = "edit",
+  customType = "getCustomOpAttrT",
+  loadJson = "loadJson",
+  updateJson = "updateJson",
+  requestEncodingData = "requestEncodingData"
 }
 
 /**
@@ -166,6 +169,17 @@ export class CircleEditorProvider implements vscode.CustomEditorProvider<CircleE
       case MessageDefs.edit:
         document.makeEdit(message);
         return;
+      case MessageDefs.customType:
+        document.sendCustomType(message);
+        return;
+      case MessageDefs.loadJson:
+        document.loadJson();
+        return;
+      case MessageDefs.updateJson:
+        document.editJsonModel(message);
+        return;
+      case MessageDefs.requestEncodingData:
+        document.sendEncodingData(message);
       default:
         // TODO: add MessageDefs and appropriate function to handle this request
         return;

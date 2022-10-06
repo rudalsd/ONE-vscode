@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *  http://www.apache.org/licenses/LICENSE-2.0
+ *    http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -37,7 +37,7 @@
  * SOFTWARE.
  */
 
-// This file referenced
+// Source from external/view.js which is
 // https://github.com/lutzroeder/netron/blob/ae449ff55642636e6a1eef092eda34ffcba1c684/source/view.js
 
 var view = view || {};
@@ -53,6 +53,7 @@ var flatbuffers = flatbuffers || require('./flatbuffers');
 var python = python || require('./python');
 var sidebar = sidebar || require('./view-sidebar');
 var grapher = grapher || require('./view-grapher');
+var jsonEditor = jsonEditor || require('./view-grapher');
 
 view.View = class {
     constructor(host, id) {
@@ -72,6 +73,8 @@ view.View = class {
                 this._selection = [];
                 this._selectionNodes = [];  // selection of view.Node
                 this._sidebar = new sidebar.Sidebar(this._host, id);
+                this._jsonEditor = new jsonEditor.jsonEditor(this._host, id);
+                this._jsonEditorOpened = false;
                 this._searchText = '';
                 this._theme = undefined;
                 this._scrollToSelected = true;  // TODO add menu for this
@@ -168,7 +171,7 @@ view.View = class {
             }
         }
         this._page = page;
-
+        // if nodeIdx is not null, the nodesidebar is opened
         if (this._host._viewingNode !== null) {
             this.showNodeProperties(this._graphs[0]._nodes[this._host._viewingNode], null);
         }
@@ -593,6 +596,7 @@ view.View = class {
             for (const nodeId of this._graph.nodes.keys()) {
                 const node = this._graph.node(nodeId);
                 if (node.label.value._outputs) {
+                    let found = false;
                     node.label.value._outputs.forEach((output) => {
                         output._arguments.forEach((arg) => {
                             // NOTE name is tensor_name + tensor_index, in circle.js
@@ -603,6 +607,7 @@ view.View = class {
                                 if (this._scrollToSelected) {
                                     scrollToSelects.push(node.label.element);
                                 }
+                                found = true;
                             }
                         });
                     });
@@ -638,12 +643,12 @@ view.View = class {
      */
     setPartition(message) {
         // NOTE opname has only nodes that are assigned to a backend
-        //    that is, not all nodes are listed.
-        //    from this, when setting graph view nodes, previous set is not cleared.
-        //    to solve this, we can (1) clear for all nodes then set backend
-        //    (2) include unassigned nodes with empty backend
-        //    (3) interate all graph nodes and set if exist in opname, clear if not.
-        //    here, (3) is implemented
+        //      that is, not all nodes are listed.
+        //      from this, when setting graph view nodes, previous set is not cleared.
+        //      to solve this, we can (1) clear for all nodes then set backend
+        //      (2) include unassigned nodes with empty backend
+        //      (3) interate all graph nodes and set if exist in opname, clear if not.
+        //      here, (3) is implemented
 
         if (!Object.prototype.hasOwnProperty.call(message, 'partition')) {
             return;
@@ -683,34 +688,34 @@ view.View = class {
         this._host.exception(err, false);
 
         // clang-format off
-    const knowns = [
-      { name: '', message: /^Invalid argument identifier/, url: 'https://github.com/lutzroeder/netron/issues/540' },
-      { name: '', message: /^Cannot read property/, url: 'https://github.com/lutzroeder/netron/issues/647' },
-      { name: '', message: /^Failed to render tensor/, url: 'https://github.com/lutzroeder/netron/issues/681' },
-      { name: 'Error', message: /^EPERM: operation not permitted/, url: 'https://github.com/lutzroeder/netron/issues/551' },
-      { name: 'Error', message: /^EACCES: permission denied/, url: 'https://github.com/lutzroeder/netron/issues/504' },
-      { name: 'RangeError', message: /^Offset is outside the bounds of the DataView/, url: 'https://github.com/lutzroeder/netron/issues/563' },
-      { name: 'RangeError', message: /^start offset of Int32Array/, url: 'https://github.com/lutzroeder/netron/issues/565' },
-      { name: 'RangeError', message: /^Maximum call stack size exceeded/, url: 'https://github.com/lutzroeder/netron/issues/589' },
-      { name: 'RangeError', message: /^Invalid string length/, url: 'https://github.com/lutzroeder/netron/issues/648' },
-      { name: 'Error loading model.', message: /^Unsupported file content \(/, url: 'https://github.com/lutzroeder/netron/issues/550' },
-      { name: 'Error loading model.', message: /^Unsupported Protocol Buffers content/, url: 'https://github.com/lutzroeder/netron/issues/593' },
-      { name: 'Error loading model.', message: /^Unsupported Protocol Buffers text content/, url: 'https://github.com/lutzroeder/netron/issues/594' },
-      { name: 'Error loading model.', message: /^Unsupported JSON content/, url: 'https://github.com/lutzroeder/netron/issues/595' },
-      { name: 'Error loading Caffe model.', message: /^File format is not caffe\.NetParameter/, url: 'https://github.com/lutzroeder/netron/issues/563' },
-      { name: 'Error loading Darknet model.', message: /^Invalid tensor shape/, url: 'https://github.com/lutzroeder/netron/issues/541' },
-      { name: 'Error loading Keras model.', message: /^Unsupported data object header version/, url: 'https://github.com/lutzroeder/netron/issues/548' },
-      { name: 'Error loading MNN model.', message: /^File format is not mnn\.Net/, url: 'https://github.com/lutzroeder/netron/issues/746' },
-      { name: 'Error loading PyTorch model.', message: /^File does not contain root module or state dictionary/, url: 'https://github.com/lutzroeder/netron/issues/543' },
-      { name: 'Error loading PyTorch model.', message: /^Module does not contain modules/, url: 'https://github.com/lutzroeder/netron/issues/544' },
-      { name: 'Error loading PyTorch model.', message: /^Failed to resolve module/, url: 'https://github.com/lutzroeder/netron/issues/545' },
-      { name: 'Error loading PyTorch model.', message: /^Unsupported function/, url: 'https://github.com/lutzroeder/netron/issues/546' },
-      { name: 'Error loading PyTorch model.', message: /^Unsupported uninitialized argument/, url: 'https://github.com/lutzroeder/netron/issues/547' },
-      { name: 'Error loading ONNX model.', message: /^File format is not onnx\.ModelProto/, url: 'https://github.com/lutzroeder/netron/issues/549' },
-      { name: 'Error loading TensorFlow model.', message: /^File text format is not TensorFlow\.js graph-model/, url: 'https://github.com/lutzroeder/netron/issues/764' },
-      { name: 'Error loading TensorFlow Lite model.', message: /^Offset is outside the bounds of the DataView/, url: 'https://github.com/lutzroeder/netron/issues/563' },
-      { name: 'Error loading UFF model.', message: /^Unknown attribute/, url: 'https://github.com/lutzroeder/netron/issues/649' }
-    ];
+        const knowns = [
+            { name: '', message: /^Invalid argument identifier/, url: 'https://github.com/lutzroeder/netron/issues/540' },
+            { name: '', message: /^Cannot read property/, url: 'https://github.com/lutzroeder/netron/issues/647' },
+            { name: '', message: /^Failed to render tensor/, url: 'https://github.com/lutzroeder/netron/issues/681' },
+            { name: 'Error', message: /^EPERM: operation not permitted/, url: 'https://github.com/lutzroeder/netron/issues/551' },
+            { name: 'Error', message: /^EACCES: permission denied/, url: 'https://github.com/lutzroeder/netron/issues/504' },
+            { name: 'RangeError', message: /^Offset is outside the bounds of the DataView/, url: 'https://github.com/lutzroeder/netron/issues/563' },
+            { name: 'RangeError', message: /^start offset of Int32Array/, url: 'https://github.com/lutzroeder/netron/issues/565' },
+            { name: 'RangeError', message: /^Maximum call stack size exceeded/, url: 'https://github.com/lutzroeder/netron/issues/589' },
+            { name: 'RangeError', message: /^Invalid string length/, url: 'https://github.com/lutzroeder/netron/issues/648' },
+            { name: 'Error loading model.', message: /^Unsupported file content \(/, url: 'https://github.com/lutzroeder/netron/issues/550' },
+            { name: 'Error loading model.', message: /^Unsupported Protocol Buffers content/, url: 'https://github.com/lutzroeder/netron/issues/593' },
+            { name: 'Error loading model.', message: /^Unsupported Protocol Buffers text content/, url: 'https://github.com/lutzroeder/netron/issues/594' },
+            { name: 'Error loading model.', message: /^Unsupported JSON content/, url: 'https://github.com/lutzroeder/netron/issues/595' },
+            { name: 'Error loading Caffe model.', message: /^File format is not caffe\.NetParameter/, url: 'https://github.com/lutzroeder/netron/issues/563' },
+            { name: 'Error loading Darknet model.', message: /^Invalid tensor shape/, url: 'https://github.com/lutzroeder/netron/issues/541' },
+            { name: 'Error loading Keras model.', message: /^Unsupported data object header version/, url: 'https://github.com/lutzroeder/netron/issues/548' },
+            { name: 'Error loading MNN model.', message: /^File format is not mnn\.Net/, url: 'https://github.com/lutzroeder/netron/issues/746' },
+            { name: 'Error loading PyTorch model.', message: /^File does not contain root module or state dictionary/, url: 'https://github.com/lutzroeder/netron/issues/543' },
+            { name: 'Error loading PyTorch model.', message: /^Module does not contain modules/, url: 'https://github.com/lutzroeder/netron/issues/544' },
+            { name: 'Error loading PyTorch model.', message: /^Failed to resolve module/, url: 'https://github.com/lutzroeder/netron/issues/545' },
+            { name: 'Error loading PyTorch model.', message: /^Unsupported function/, url: 'https://github.com/lutzroeder/netron/issues/546' },
+            { name: 'Error loading PyTorch model.', message: /^Unsupported uninitialized argument/, url: 'https://github.com/lutzroeder/netron/issues/547' },
+            { name: 'Error loading ONNX model.', message: /^File format is not onnx\.ModelProto/, url: 'https://github.com/lutzroeder/netron/issues/549' },
+            { name: 'Error loading TensorFlow model.', message: /^File text format is not TensorFlow\.js graph-model/, url: 'https://github.com/lutzroeder/netron/issues/764' },
+            { name: 'Error loading TensorFlow Lite model.', message: /^Offset is outside the bounds of the DataView/, url: 'https://github.com/lutzroeder/netron/issues/563' },
+            { name: 'Error loading UFF model.', message: /^Unknown attribute/, url: 'https://github.com/lutzroeder/netron/issues/649' }
+        ];
         // clang-format on
         const known = knowns.find(
             (known) => (known.name.length === 0 || known.name === err.name) &&
@@ -732,6 +737,7 @@ view.View = class {
     open(context) {
         this._host.event('Model', 'Open', 'Size', context.stream ? context.stream.length : 0);
         this._sidebar.close();
+        this._jsonEditor.close();
         return this._timeout(2).then(() => {
             return this._modelFactoryService.open(context).then((model) => {
                 const format = [];
@@ -771,6 +777,7 @@ view.View = class {
 
     _updateActiveGraph(graph) {
         this._sidebar.close();
+        this._jsonEditor.close();
         if (this._model) {
             const model = this._model;
             this.show('welcome spinner');
@@ -831,7 +838,13 @@ view.View = class {
                             model._graphs[idx]._nodes[jdx]['_subgraphIdx'] = idx;
                             if (model._graphs[idx]._nodes[jdx]._type?.category === 'custom') {
                                 model._graphs[idx]._nodes[jdx]._isCustom = true;
-                                // TODO implements getCustomOpAttrT request
+                                vscode.postMessage({
+                                    command: 'getCustomOpAttrT',
+                                    data: {
+                                        _subgraphIdx: idx,
+                                        _nodeIdx: jdx,
+                                    }
+                                });
                             }
                         }
                     }
@@ -1093,6 +1106,10 @@ view.View = class {
     }
 
     showModelProperties() {
+        if (this._jsonEditor) {
+            this._jsonEditor.close();
+        }
+
         if (this._model) {
             try {
                 const modelSidebar =
@@ -1116,7 +1133,18 @@ view.View = class {
         }
     }
 
+    showJsonEditor() {
+        if (this._sidebar) {
+            this._sidebar.close();
+        }
+        const jsonEditor = this._jsonEditor.open();
+    }
+
     showNodeProperties(node, input) {
+        if (this._jsonEditor) {
+            this._jsonEditor.close();
+        }
+
         if (node) {
             try {
                 const nodeSidebar = new sidebar.NodeSidebar(this._host, node);
@@ -1176,6 +1204,10 @@ view.View = class {
     }
 
     showDocumentation(type) {
+        if (this._jsonEditor) {
+            this._jsonEditor.close();
+        }
+        
         if (type && (type.description || type.inputs || type.outputs || type.attributes)) {
             if (type.nodes && type.nodes.length > 0) {
                 this.pushGraph(type);
@@ -1357,9 +1389,9 @@ view.Node = class extends grapher.Node {
     }
 
     // clang-format off
-  get class() {
-    return 'graph-node';
-  }
+    get class() {
+        return 'graph-node';
+    }
     // clang-format on
 
     get inputs() {
@@ -1485,7 +1517,7 @@ view.Node = class extends grapher.Node {
             }
             if (hiddenInitializers) {
                 // clang-format off
-        list.add(null, '\u3008' + '\u2026' + '\u3009', '', null, '');
+                list.add(null, '\u3008' + '\u2026' + '\u3009', '', null, '');
                 // clang-format on
             }
 
@@ -1545,9 +1577,9 @@ view.Input = class extends grapher.Node {
     }
 
     // clang-format off
-  get class() {
-    return 'graph-input';
-  }
+    get class() {
+        return 'graph-input';
+    }
     // clang-format on
 
     get inputs() {
@@ -2040,23 +2072,23 @@ view.ModelFactoryService = class {
             const obj = context.open('json');
             if (obj) {
                 // clang-format off
-        const formats = [
-          { name: 'Netron metadata', tags: [ '[].name', '[].schema' ] },
-          { name: 'Netron metadata', tags: [ '[].name', '[].attributes' ] },
-          { name: 'Netron metadata', tags: [ '[].name', '[].category' ] },
-          { name: 'Darkflow metadata', tags: [ 'net', 'type', 'model' ] },
-          { name: 'keras-yolo2 configuration', tags: [ 'model', 'train', 'valid' ] },
-          { name: 'Vulkan SwiftShader ICD manifest', tags: [ 'file_format_version', 'ICD' ] },
-          { name: 'DeepLearningExamples configuration', tags: [ 'attention_probs_dropout_prob', 'hidden_act', 'hidden_dropout_prob', 'hidden_size', ] },
-          { name: 'NuGet assets', tags: [ 'version', 'targets', 'packageFolders' ] },
-          { name: 'NuGet data', tags: [ 'format', 'restore', 'projects' ] },
-          { name: 'NPM package', tags: [ 'name', 'version', 'dependencies' ] },
-          { name: 'NetworkX adjacency_data', tags: [ 'directed', 'graph', 'nodes' ] },
-          { name: 'Waifu2x data', tags: [ 'name', 'arch_name', 'channels' ] },
-          { name: 'Waifu2x data', tags: [ '[].nInputPlane', '[].nOutputPlane', '[].weight', '[].bias' ] },
-          { name: 'Brain.js data', tags: [ 'type', 'sizes', 'layers' ] },
-          { name: 'Custom Vision metadata', tags: [ 'CustomVision.Metadata.Version' ] }
-        ];
+                const formats = [
+                    { name: 'Netron metadata', tags: [ '[].name', '[].schema' ] },
+                    { name: 'Netron metadata', tags: [ '[].name', '[].attributes' ] },
+                    { name: 'Netron metadata', tags: [ '[].name', '[].category' ] },
+                    { name: 'Darkflow metadata', tags: [ 'net', 'type', 'model' ] },
+                    { name: 'keras-yolo2 configuration', tags: [ 'model', 'train', 'valid' ] },
+                    { name: 'Vulkan SwiftShader ICD manifest', tags: [ 'file_format_version', 'ICD' ] },
+                    { name: 'DeepLearningExamples configuration', tags: [ 'attention_probs_dropout_prob', 'hidden_act', 'hidden_dropout_prob', 'hidden_size', ] },
+                    { name: 'NuGet assets', tags: [ 'version', 'targets', 'packageFolders' ] },
+                    { name: 'NuGet data', tags: [ 'format', 'restore', 'projects' ] },
+                    { name: 'NPM package', tags: [ 'name', 'version', 'dependencies' ] },
+                    { name: 'NetworkX adjacency_data', tags: [ 'directed', 'graph', 'nodes' ] },
+                    { name: 'Waifu2x data', tags: [ 'name', 'arch_name', 'channels' ] },
+                    { name: 'Waifu2x data', tags: [ '[].nInputPlane', '[].nOutputPlane', '[].weight', '[].bias' ] },
+                    { name: 'Brain.js data', tags: [ 'type', 'sizes', 'layers' ] },
+                    { name: 'Custom Vision metadata', tags: [ 'CustomVision.Metadata.Version' ] }
+                ];
                 // clang-format on
                 const match = (obj, tag) => {
                     if (tag.startsWith('[].')) {
@@ -2084,25 +2116,25 @@ view.ModelFactoryService = class {
         };
         const pbtxt = () => {
             // clang-format off
-      const formats = [
-        { name: 'ImageNet LabelMap data', tags: [ 'entry', 'entry.target_class' ] },
-        { name: 'StringIntLabelMapProto data', tags: [ 'item', 'item.id', 'item.name' ] },
-        { name: 'caffe.LabelMap data', tags: [ 'item', 'item.name', 'item.label' ] },
-        { name: 'Triton Inference Server configuration', tags: [ 'name', 'platform', 'input', 'output' ] },
-        { name: 'TensorFlow OpList data', tags: [ 'op', 'op.name', 'op.input_arg' ] },
-        { name: 'vitis.ai.proto.DpuModelParamList data', tags: [ 'model', 'model.name', 'model.kernel' ] },
-        { name: 'object_detection.protos.DetectionModel data', tags: [ 'model', 'model.ssd' ] },
-        { name: 'object_detection.protos.DetectionModel data', tags: [ 'model', 'model.faster_rcnn' ] },
-        { name: 'tensorflow.CheckpointState data', tags: [ 'model_checkpoint_path', 'all_model_checkpoint_paths' ] },
-        { name: 'apollo.perception.camera.traffic_light.detection.DetectionParam data', tags: [ 'min_crop_size', 'crop_method' ] },
-        { name: 'tidl_meta_arch.TIDLMetaArch data', tags: [ 'caffe_ssd' ] }, // https://github.com/TexasInstruments/edgeai-mmdetection/blob/master/mmdet/utils/proto/mmdet_meta_arch.proto
-        { name: 'tidl_meta_arch.TIDLMetaArch data', tags: [ 'tf_od_api_ssd' ] },
-        { name: 'tidl_meta_arch.TIDLMetaArch data', tags: [ 'tidl_ssd' ] },
-        { name: 'tidl_meta_arch.TIDLMetaArch data', tags: [ 'tidl_faster_rcnn' ] },
-        { name: 'tidl_meta_arch.TIDLMetaArch data', tags: [ 'tidl_yolo' ] },
-        { name: 'tidl_meta_arch.TIDLMetaArch data', tags: [ 'tidl_retinanet' ] },
-        { name: 'domi.InsertNewOps data', tags: [ 'aipp_op' ] } // https://github.com/Ascend/parser/blob/development/parser/proto/insert_op.proto
-      ];
+            const formats = [
+                { name: 'ImageNet LabelMap data', tags: [ 'entry', 'entry.target_class' ] },
+                { name: 'StringIntLabelMapProto data', tags: [ 'item', 'item.id', 'item.name' ] },
+                { name: 'caffe.LabelMap data', tags: [ 'item', 'item.name', 'item.label' ] },
+                { name: 'Triton Inference Server configuration', tags: [ 'name', 'platform', 'input', 'output' ] },
+                { name: 'TensorFlow OpList data', tags: [ 'op', 'op.name', 'op.input_arg' ] },
+                { name: 'vitis.ai.proto.DpuModelParamList data', tags: [ 'model', 'model.name', 'model.kernel' ] },
+                { name: 'object_detection.protos.DetectionModel data', tags: [ 'model', 'model.ssd' ] },
+                { name: 'object_detection.protos.DetectionModel data', tags: [ 'model', 'model.faster_rcnn' ] },
+                { name: 'tensorflow.CheckpointState data', tags: [ 'model_checkpoint_path', 'all_model_checkpoint_paths' ] },
+                { name: 'apollo.perception.camera.traffic_light.detection.DetectionParam data', tags: [ 'min_crop_size', 'crop_method' ] },
+                { name: 'tidl_meta_arch.TIDLMetaArch data', tags: [ 'caffe_ssd' ] }, // https://github.com/TexasInstruments/edgeai-mmdetection/blob/master/mmdet/utils/proto/mmdet_meta_arch.proto
+                { name: 'tidl_meta_arch.TIDLMetaArch data', tags: [ 'tf_od_api_ssd' ] },
+                { name: 'tidl_meta_arch.TIDLMetaArch data', tags: [ 'tidl_ssd' ] },
+                { name: 'tidl_meta_arch.TIDLMetaArch data', tags: [ 'tidl_faster_rcnn' ] },
+                { name: 'tidl_meta_arch.TIDLMetaArch data', tags: [ 'tidl_yolo' ] },
+                { name: 'tidl_meta_arch.TIDLMetaArch data', tags: [ 'tidl_retinanet' ] },
+                { name: 'domi.InsertNewOps data', tags: [ 'aipp_op' ] } // https://github.com/Ascend/parser/blob/development/parser/proto/insert_op.proto
+            ];
             // clang-format on
             const tags = context.tags('pbtxt');
             if (tags.size > 0) {
@@ -2134,11 +2166,11 @@ view.ModelFactoryService = class {
             const tags = context.tags('pb+');
             if (Object.keys(tags).length > 0) {
                 const formats = [
-          { name: 'sentencepiece.ModelProto data', tags: [[1,[[1,2],[2,5],[3,0]]],[2,[[1,2],[2,2],[3,0],[4,0],[5,2],[6,0],[7,2],[10,5],[16,0],[40,0],[41,0],[42,0],[43,0]]],[3,[]],[4,[]],[5,[]]] },
-          { name: 'mediapipe.BoxDetectorIndex data', tags: [[1,[[1,[[1,[[1,5],[2,5],[3,5],[4,5],[6,0],[7,5],[8,5],[10,5],[11,0],[12,0]]],[2,5],[3,[]]]],[2,false],[3,false],[4,false],[5,false]]],[2,false],[3,false]] },
-          { name: 'third_party.tensorflow.python.keras.protobuf.SavedMetadata data', tags: [[1,[[1,[[1,0],[2,0]]],[2,0],[3,2],[4,2],[5,2]]]] },
-          { name: 'pblczero.Net data', tags: [[1,5],[2,2],[3,[[1,0],[2,0],[3,0]],[10,[[1,[]],[2,[]],[3,[]],[4,[]],[5,[]],[6,[]]]],[11,[]]]] } // https://github.com/LeelaChessZero/lczero-common/blob/master/proto/net.proto
-        ];
+                    { name: 'sentencepiece.ModelProto data', tags: [[1,[[1,2],[2,5],[3,0]]],[2,[[1,2],[2,2],[3,0],[4,0],[5,2],[6,0],[7,2],[10,5],[16,0],[40,0],[41,0],[42,0],[43,0]]],[3,[]],[4,[]],[5,[]]] },
+                    { name: 'mediapipe.BoxDetectorIndex data', tags: [[1,[[1,[[1,[[1,5],[2,5],[3,5],[4,5],[6,0],[7,5],[8,5],[10,5],[11,0],[12,0]]],[2,5],[3,[]]]],[2,false],[3,false],[4,false],[5,false]]],[2,false],[3,false]] },
+                    { name: 'third_party.tensorflow.python.keras.protobuf.SavedMetadata data', tags: [[1,[[1,[[1,0],[2,0]]],[2,0],[3,2],[4,2],[5,2]]]] },
+                    { name: 'pblczero.Net data', tags: [[1,5],[2,2],[3,[[1,0],[2,0],[3,0]],[10,[[1,[]],[2,[]],[3,[]],[4,[]],[5,[]],[6,[]]]],[11,[]]]] } // https://github.com/LeelaChessZero/lczero-common/blob/master/proto/net.proto
+                ];
                 const match = (tags, schema) => {
                     for (const pair of schema) {
                         const key = pair[0];
@@ -2498,28 +2530,28 @@ view.ModelFactoryService = class {
             }
             /* eslint-disable no-control-regex */
             // clang-format off
-      const entries = [
-        { name: 'ELF executable', value: /^\x7FELF/ },
-        { name: 'PNG image', value: /^\x89PNG/ },
-        { name: 'Git LFS header', value: /^version https:\/\/git-lfs.github.com/ },
-        { name: 'Git LFS header', value: /^\s*oid sha256:/ },
-        { name: 'HTML markup', value: /^\s*<html>/ },
-        { name: 'HTML markup', value: /^\s*<!doctype\s*html>/ },
-        { name: 'HTML markup', value: /^\s*<!DOCTYPE\s*html>/ },
-        { name: 'HTML markup', value: /^\s*<!DOCTYPE\s*HTML>/ },
-        { name: 'HTML markup', value: /^\s*<!DOCTYPE\s*HTML\s+(PUBLIC|SYSTEM)?/ },
-        { name: 'Unity metadata', value: /^fileFormatVersion:/ },
-        { name: 'Python source code', value: /^\s*import[ ]+(os|sys|types|torch|argparse|onnx|numpy|tensorflow)(,|;|\s)/ },
-        { name: 'Python source code', value: /^\s*import[ ]+([a-z])+[ ]+as[ ]+/ },
-        { name: 'Python source code', value: /^\s*from[ ]+(torch)[ ]+import[ ]+/ },
-        { name: 'Python source code', value: /^\s*from[ ]+(keras)[ ]+import[ ]+/ },
-        { name: 'Bash script', value: /^#!\/usr\/bin\/env\s/ },
-        { name: 'Bash script', value: /^#!\/bin\/bash\s/ },
-        { name: 'TSD header', value: /^%TSD-Header-###%/ },
-        { name: 'AppleDouble data', value: /^\x00\x05\x16\x07/ },
-        { name: 'TensorFlow Hub module', value: /^\x08\x03$/, identifier: 'tfhub_module.pb' },
-        { name: 'OpenVX network binary graph data', value: /^VPMN/ } // network_binary.nb
-      ];
+            const entries = [
+                { name: 'ELF executable', value: /^\x7FELF/ },
+                { name: 'PNG image', value: /^\x89PNG/ },
+                { name: 'Git LFS header', value: /^version https:\/\/git-lfs.github.com/ },
+                { name: 'Git LFS header', value: /^\s*oid sha256:/ },
+                { name: 'HTML markup', value: /^\s*<html>/ },
+                { name: 'HTML markup', value: /^\s*<!doctype\s*html>/ },
+                { name: 'HTML markup', value: /^\s*<!DOCTYPE\s*html>/ },
+                { name: 'HTML markup', value: /^\s*<!DOCTYPE\s*HTML>/ },
+                { name: 'HTML markup', value: /^\s*<!DOCTYPE\s*HTML\s+(PUBLIC|SYSTEM)?/ },
+                { name: 'Unity metadata', value: /^fileFormatVersion:/ },
+                { name: 'Python source code', value: /^\s*import[ ]+(os|sys|types|torch|argparse|onnx|numpy|tensorflow)(,|;|\s)/ },
+                { name: 'Python source code', value: /^\s*import[ ]+([a-z])+[ ]+as[ ]+/ },
+                { name: 'Python source code', value: /^\s*from[ ]+(torch)[ ]+import[ ]+/ },
+                { name: 'Python source code', value: /^\s*from[ ]+(keras)[ ]+import[ ]+/ },
+                { name: 'Bash script', value: /^#!\/usr\/bin\/env\s/ },
+                { name: 'Bash script', value: /^#!\/bin\/bash\s/ },
+                { name: 'TSD header', value: /^%TSD-Header-###%/ },
+                { name: 'AppleDouble data', value: /^\x00\x05\x16\x07/ },
+                { name: 'TensorFlow Hub module', value: /^\x08\x03$/, identifier: 'tfhub_module.pb' },
+                { name: 'OpenVX network binary graph data', value: /^VPMN/ } // network_binary.nb
+            ];
             // clang-format on
             /* eslint-enable no-control-regex */
             const buffer = stream.peek(Math.min(4096, stream.length));

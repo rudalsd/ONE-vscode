@@ -5,7 +5,7 @@
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *  http://www.apache.org/licenses/LICENSE-2.0
+ *    http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -37,7 +37,7 @@
  * SOFTWARE.
  */
 
-// This file referenced
+// Source from external/index.js which is
 // https://github.com/lutzroeder/netron/blob/ae449ff55642636e6a1eef092eda34ffcba1c684/source/index.js
 
 /* eslint "no-global-assign": ["error", {"exceptions": [ "TextDecoder", "TextEncoder",
@@ -88,6 +88,7 @@ host.BrowserHost = class {
             this._mode = viewMode.selector;
         }
 
+        // In multi-view state, record the state that was shown when modifying
         this._viewingSubgraph = 0;
         this._viewingNode = null;
     }
@@ -152,6 +153,15 @@ host.BrowserHost = class {
                 case 'setCustomOpAttrT':
                     this._msgSetCustomOpAttrT(message);
                     break;
+                case 'loadJson':
+                    if (this._view._jsonEditorOpened) {
+                        this._msgLoadJson(message);
+                    }
+                    break;
+                case 'responseEncodingData':
+                    this._msgGetBuffer(message);
+                    break;
+
             }
         });
 
@@ -171,6 +181,11 @@ host.BrowserHost = class {
                 {label: 'Find...', accelerator: 'CmdOrCtrl+F', click: () => this._view.find()});
             this._menu.add({});
         }
+        this._menu.add({
+            label: () => 'JSON Editor',
+            accelerator: 'Alt+J',
+            click: () => this._view.showJsonEditor()
+        });
         this._menu.add({
             label: () => this._view.options.attributes ? 'Hide Attributes' : 'Show Attributes',
             accelerator: 'CmdOrCtrl+D',
@@ -453,8 +468,6 @@ host.BrowserHost = class {
                 return this._view.open(context).then((model) => {
                     this._view.show(null);
                     this.document.title = files[0].name;
-
-                    // notify owner that load has finished
                     vscode.postMessage({command: 'finishload'});
                     return model;
                 });
@@ -555,6 +568,16 @@ host.BrowserHost = class {
                 }
             }
         }
+    }
+
+    _msgLoadJson(message) {
+        const data = message.data;
+        this._view._jsonEditor._activate(data);
+    }
+
+    _msgGetBuffer(message) {
+        const output = this._document.getElementById('output');
+        output.value = message.data.join(', ');
     }
 };
 

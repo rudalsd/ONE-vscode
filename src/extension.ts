@@ -68,7 +68,6 @@ export function activate(context: vscode.ExtensionContext) {
 
   CircleViewerProvider.register(context);
 
-  MetadataViewerProvider.register(context);
 
   // returning backend registration function that will be called by backend extensions
   return backendRegistrationApi();

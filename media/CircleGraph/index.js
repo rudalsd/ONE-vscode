@@ -492,7 +492,7 @@ host.BrowserHost = class {
         this._view.setSelection(message);
     }
 
-    _msgColorTheme(_message) {
+    _msgColorTheme(message) {
         this._view.updateThemeColor();
         this._view.applyThemeColor();
     }
@@ -529,7 +529,7 @@ host.BrowserHost = class {
         this._document.head.appendChild(style);
     }
 
-    _msgReload(_message) {
+    _msgReload(message) {
         this._modelData = [];
 
         this._view.reset();
